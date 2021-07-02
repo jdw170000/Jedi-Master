@@ -11,12 +11,12 @@ app = Flask(__name__)
 def hello():
 	result = None
 	with JediDatabase() as yoda:
-		result = yoda.fetch()
+		result = yoda.get_all_candidates()
 		print(result)
 
 		yoda.do_round()
 
-		result = yoda.fetch()
+		result = yoda.get_all_candidates()
 		print(result)
 		
 
@@ -25,8 +25,8 @@ def hello():
 if __name__ == '__main__':
 	try:
 		with JediDatabase() as yoda:
-			yoda.create_database()
-			yoda.insert_test_data()
+			yoda.create_tables()
+			yoda.insert_test_data)
 		app.run()
 	except KeyboardInterrupt:
 		print('done')
