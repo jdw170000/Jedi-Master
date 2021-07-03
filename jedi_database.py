@@ -10,7 +10,7 @@ class JediDatabase:
 	def __init__(self):
 		config = None
 		with open('db_config.yaml', 'r') as config_stream:
-			config = yaml.load(config_stream)
+			config = yaml.safe_load(config_stream)
 
 		self.connection = sqlite3.connect(config['db_name'])
 		self.cur = self.connection.cursor()
@@ -50,6 +50,10 @@ class JediDatabase:
 	def get_all_groups(self):
 		self.cur.execute(SELECT_ALL_GROUP_STATES)
 		return self.cur.fetchall()
+
+	def get_group_name(self, group_id):
+		self.cur.execute("""SELECT name FROM GroupState WHERE id = ?;""", group_id)
+		return self.cur.fetchone()
 	
 	def get_group_claims(self, group_id):
 		self.cur.execute("""SELECT candidate_id FROM GroupClaims WHERE id = ?;""", group_id)
