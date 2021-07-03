@@ -1,2 +1,6 @@
 *.yaml
-__pycache__
+__pycache__/
+*.py[cod]
+my_jedi_db
+node_modules/
+
