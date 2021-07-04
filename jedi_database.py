@@ -52,33 +52,33 @@ class JediDatabase:
 		return self.cur.fetchall()
 
 	def get_group_name(self, group_id):
-		self.cur.execute("""SELECT name FROM GroupState WHERE id = ?;""", group_id)
+		self.cur.execute("""SELECT name FROM GroupState WHERE id = ?;""", (group_id,))
 		return self.cur.fetchone()
 	
 	def get_group_claims(self, group_id):
-		self.cur.execute("""SELECT candidate_id FROM GroupClaims WHERE id = ?;""", group_id)
+		self.cur.execute(SELECT_GROUP_CLAIMS_VIEW, (group_id,))
 		return self.cur.fetchall()
 
 	def get_group_holds(self, group_id):
-		self.cur.execute("""SELECT candidate_id FROM GroupHolds WHERE id = ?;""", group_id)
+		self.cur.execute(SELECT_GROUP_HOLDS_VIEW, (group_id,))
 		return self.cur.fetchall()
 
 	def update_group_claims(self, group_id, claim_list):
-		self.cur.execute("""DELETE FROM GroupClaims WHERE id = ?;""", group_id)
+		self.cur.execute("""DELETE FROM GroupClaims WHERE id = ?;""", (group_id,))
 		for candidate_id in claim_list:
-			self.cur.execute("""INSERT OR IGNORE INTO GroupClaims (id, candidate_id) VALUES (?, ?);""", group_id, candidate_id)
+			self.cur.execute("""INSERT OR IGNORE INTO GroupClaims (id, candidate_id) VALUES (?, ?);""", (group_id, candidate_id))
 		self.connection.commit()
 	
 	def update_group_holds(self, group_id, hold_list):
-		self.cur.execute("""DELETE FROM GroupHolds WHERE id = ?;""", group_id)
+		self.cur.execute("""DELETE FROM GroupHolds WHERE id = ?;""", (group_id,))
 		for candidate_id in claim_list:
-			self.cur.execute("""INSERT OR IGNORE INTO GroupHolds (id, candidate_id) VALUES (?, ?);""", group_id, candidate_id)
+			self.cur.execute("""INSERT OR IGNORE INTO GroupHolds (id, candidate_id) VALUES (?, ?);""", (group_id, candidate_id))
 		self.connection.commit()
 
 	def update_candidate_preferences(self, candidate_id, preference_list):
-		self.cur.execute("""DELETE FROM CandidatePreferences WHERE id = ?;""", candidate_id)
+		self.cur.execute("""DELETE FROM CandidatePreferences WHERE id = ?;""", (candidate_id,))
 		for priority, group_id in enumerate(preference_list):
-			self.cur.execute("""INSERT OR IGNORE INTO CandidatePreferences (id, group_id, priority) VALUES (?, ?, ?);""", candidate_id, group_id, priority)
+			self.cur.execute("""INSERT OR IGNORE INTO CandidatePreferences (id, group_id, priority) VALUES (?, ?, ?);""", (candidate_id, group_id, priority))
 		self.connection.commit()
 
 	def do_round(self):

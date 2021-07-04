@@ -1,0 +1,9 @@
+<p>Select your group:</p>
+<form action="/register" method="post">
+	<select name="id">
+	{% for item in data %}
+		<option value="{{item[0]}}">{{item[1]}}</option>
+	{% endfor %}
+	</select>
+	<input type="submit" value="Register">
+</form>

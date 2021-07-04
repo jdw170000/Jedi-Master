@@ -6,6 +6,19 @@ INSERT_OR_REPLACE_CANDIDATE_STATE_name = """INSERT OR REPLACE INTO CandidateStat
 
 INSERT_OR_REPLACE_GROUP_STATE_name = """INSERT OR REPLACE INTO GroupState (name) VALUES (?);"""
 
+
+SELECT_GROUP_CLAIMS_VIEW = """SELECT gc.candidate_id, cs.name 
+			FROM GroupClaims as gc
+			INNER JOIN CandidateState as cs
+				ON gc.candidate_id = cs.id
+			WHERE gc.id = ?;"""
+
+SELECT_GROUP_HOLDS_VIEW = """SELECT gh.candidate_id, cs.name 
+			FROM GroupHolds as gh
+			INNER JOIN CandidateState as cs
+				ON gh.candidate_id = cs.id
+			WHERE gh.id = ?;"""
+
 # for each candidate who is not resolved and is not held,
 # set their group id to be that of their most preferred group that is claiming them
 DO_ROUND = """UPDATE CandidateState as cs 
