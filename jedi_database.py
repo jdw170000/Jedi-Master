@@ -71,7 +71,7 @@ class JediDatabase:
 	
 	def update_group_holds(self, group_id, hold_list):
 		self.cur.execute("""DELETE FROM GroupHolds WHERE id = ?;""", (group_id,))
-		for candidate_id in claim_list:
+		for candidate_id in hold_list:
 			self.cur.execute("""INSERT OR IGNORE INTO GroupHolds (id, candidate_id) VALUES (?, ?);""", (group_id, candidate_id))
 		self.connection.commit()
 

@@ -79,10 +79,30 @@ def group():
 			abort(401)
 
 		candidate_states = jedi_db.get_all_candidates()
-		group_claims = jedi_db.get_group_claims(client_id)
-		group_holds = jedi_db.get_group_holds(client_id)
 		
-		group_view = {'name': group_name[0], 'claims': group_claims, 'holds': group_holds, 'candidates': candidate_states}
+		committed = filter(lambda candidate: candidate[3] and candidate[2] == client_id, candidate_states)
+		claims = set(jedi_db.get_group_claims(client_id))
+		holds = set(jedi_db.get_group_holds(client_id))
+
+		available = filter(lambda candidate: not candidate[3], candidate_states)
+		available = set(map(lambda candidate: (candidate[0], candidate[1]), available))
+
+		unavailable = filter(lambda candidate: candidate[3] and candidate[2] != client_id, candidate_states)
+		unavailable = set(map(lambda candidate: (candidate[0], candidate[1]), unavailable))
+
+		# resolve conflicts in the sets
+		claims = (claims - unavailable) - holds
+		holds = holds - unavailable
+		available = (available - claims) - holds
+	
+		group_view = {
+			'name': group_name[0], 
+			'claims': claims, 
+			'holds': holds, 
+			'committed': committed,
+			'unavailable': unavailable,
+			'available': available
+		}
 		return render_template('group.html', data=group_view)
 
 
@@ -96,14 +116,16 @@ def group_post():
 	if client_id == -1:
 		abort(400)
 
-	claim_list = requests.form.getlist('claim_list')
-	hold_list = requests.form.getlist('hold_list')
+	claim_list = request.form.getlist('claim_list[]')
+	hold_list = request.form.getlist('hold_list[]')
 
 	#todo: type check and input validation
 
 	with JediDatabase() as jedi_db:
 		jedi_db.update_group_claims(client_id, claim_list)
 		jedi_db.update_group_holds(client_id, hold_list)
+
+	return "test"
 
 	return redirect(url_for('group'))
 

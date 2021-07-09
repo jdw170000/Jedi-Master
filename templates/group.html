@@ -1,21 +1,105 @@
-<h1>Welcome, {{data['name']}}</h1>
+<head>
+	<title> JediMaster: {{data['name']}} </title>
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/dragula/dist/dragula.css')}}">
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}">
+	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}">
+	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/dragula/dist/dragula.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/jquery/dist/jquery.min.js')}}"></script>
+	<script>
+		jQuery.expr[':'].icontains = function(a, i, m) { return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0; };
+	</script>
+</head>
 
-<p>Candidates:</p>
-<ul>
-	{% for candidate in data['candidates'] %}
-		<li>Name: {{candidate[1]}}, Group: {{candidate[2]}}</li>
-	{% endfor %}
-</ul>
+<body>
+	
+<div class="jumbotron text-center">
+	<h1>Welcome, {{data['name']}}</h1>
+	<button onclick="updateGroupState()">Submit</button>
+	<input type="text" id="search" onkeyup="searchCandidates()" placeholder="Search for names...">
+</div>
 
-<p>Claims:</p>
-<ul>
-	{% for item in data['claims'] %}
-		<li>{{item}}</li>
-	{% endfor %}
-</ul>
-<p>Holds:</p>
-<ul>
-	{% for item in data['holds'] %}
-		<li>{{item}}</li>
-	{% endfor %}
-</ul>
+<div class="container">
+	<div class="row">
+		<div class="col-sm-12 text-center"> <h3>Candidates</h3> </div>
+	</div>
+	<div class="row">
+		<div class="col-sm-12 interactive" id="available">
+			{% for candidate in data['available'] %}
+				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
+			{% endfor %}	
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-3"> <h3>Committed:</h3> </div>
+		<div class="col-sm-3"> <h3>Claims:</h3> </div>
+		<div class="col-sm-3"> <h3>Holds:</h3> </div>
+		<div class="col-sm-3"> <h3>Unavailable:</h3> </div>
+		
+	</div>
+	<div class="row">
+		<div class="col-sm-3" id="committed">
+			{% for candidate in data['committed'] %}
+				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
+			{% endfor %}
+		</div>
+
+		<div class="col-sm-3 interactive" id="claims">
+			{% for candidate in data['claims'] %}
+				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
+			{% endfor %}
+		</div>
+
+		<div class="col-sm-3 interactive" id="holds">
+			{% for candidate in data['holds'] %}
+				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
+			{% endfor %}
+		</div>
+		
+		<div class="col-sm-3" id="unavailable">
+			{% for candidate in data['unavailable'] %}
+				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<script>
+	dragula($(".interactive").toArray());
+
+	function searchCandidates()
+	{
+		var searchStr = $("#search")[0].value;
+		if(searchStr && searchStr.length > 0)
+		{
+			$(`.candidate:icontains(${searchStr})`).css("border-color", "red");
+			$(`.candidate:not(:icontains(${searchStr}))`).css("border-color", "");
+		}
+		else
+		{
+			$('.candidate').css("border-color", "");
+		}
+	};
+
+	function getCandidateIdFromElement(element, index)
+	{
+		return parseInt(element.attributes.getNamedItem("data-candidateId").value, 10);
+	};
+
+	function updateGroupState()
+	{
+		var claim_list = $.map($('#claims .candidate'), getCandidateIdFromElement);
+		var hold_list = $.map($('#holds .candidate'), getCandidateIdFromElement);
+
+		$.post({
+			url: '/group', 
+			data: {"claim_list": claim_list, "hold_list": hold_list}, 
+			dataType: 'json',
+			settings: {'contentType': 'application/json'},
+		});
+	};
+
+</script>
+
+
+</body>
