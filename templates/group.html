@@ -1,8 +1,15 @@
+<!DOCTYPE html>
 <head>
-	<title> JediMaster: {{data['name']}} </title>
-	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/dragula/dist/dragula.css')}}">
-	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}">
-	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}">
+	<title> Jedi Master </title>
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/dragula/dist/dragula.css')}}" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
+	
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
+	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
+	
 	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
 	<script src="{{url_for('static', filename='node_modules/dragula/dist/dragula.min.js')}}"></script>
 	<script src="{{url_for('static', filename='node_modules/jquery/dist/jquery.min.js')}}"></script>
@@ -12,54 +19,56 @@
 </head>
 
 <body>
+
+<div id="overlay">
+  <div class="cv-spinner">
+    <span class="spinner"></span>
+  </div>
+</div>
 	
 <div class="jumbotron text-center">
-	<h1>Welcome, {{data['name']}}</h1>
-	<button onclick="updateGroupState()">Submit</button>
 	<input type="text" id="search" onkeyup="searchCandidates()" placeholder="Search for names...">
+	<h1 id="welcome"></h1>
+	<button id="refresh" onclick="refreshCandidates()">Refresh</button>
+	<button id="ready" onclick="updateGroupState()">Ready</button>
 </div>
 
 <div class="container">
 	<div class="row">
 		<div class="col-sm-12 text-center"> <h3>Candidates</h3> </div>
 	</div>
-	<div class="row">
-		<div class="col-sm-12 interactive" id="available">
-			{% for candidate in data['available'] %}
-				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
-			{% endfor %}	
+	<div class="row py-2">
+		<div class="col-sm-12">
+			<div class="candidate-container interactive" id="available">
+			</div>	
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-sm-3"> <h3>Committed:</h3> </div>
-		<div class="col-sm-3"> <h3>Claims:</h3> </div>
-		<div class="col-sm-3"> <h3>Holds:</h3> </div>
-		<div class="col-sm-3"> <h3>Unavailable:</h3> </div>
+		<div class="col-sm-3 text-center"> <h3 class="noninteractive">Committed</h3> </div>
+		<div class="col-sm-3 text-center"> <h3>Claims</h3> </div>
+		<div class="col-sm-3 text-center"> <h3>Holds</h3> </div>
+		<div class="col-sm-3 text-center"> <h3 class="noninteractive">Unavailable</h3> </div>
 		
 	</div>
 	<div class="row">
-		<div class="col-sm-3" id="committed">
-			{% for candidate in data['committed'] %}
-				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
-			{% endfor %}
+		<div class="col-sm-3">
+			<div class="candidate-container" id="committed">
+			</div>
 		</div>
 
-		<div class="col-sm-3 interactive" id="claims">
-			{% for candidate in data['claims'] %}
-				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
-			{% endfor %}
+		<div class="col-sm-3">
+			<div class="candidate-container interactive" id="claims">
+			</div>
 		</div>
 
-		<div class="col-sm-3 interactive" id="holds">
-			{% for candidate in data['holds'] %}
-				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
-			{% endfor %}
+		<div class="col-sm-3">
+			<div class="candidate-container interactive" id="holds">
+			</div>
 		</div>
 		
-		<div class="col-sm-3" id="unavailable">
-			{% for candidate in data['unavailable'] %}
-				<div class="candidate" data-candidateId="{{candidate[0]}}">{{candidate[1]}}</div>
-			{% endfor %}
+		<div class="col-sm-3">
+			<div class="candidate-container" id="unavailable">
+			</div>
 		</div>
 	</div>
 </div>
@@ -67,23 +76,62 @@
 <script>
 	dragula($(".interactive").toArray());
 
+	$(document).ajaxSend(function() 
+	{
+		$('#overlay').fadeIn(300);
+	});
+
+	refreshCandidates();
+
 	function searchCandidates()
 	{
 		var searchStr = $("#search")[0].value;
 		if(searchStr && searchStr.length > 0)
 		{
-			$(`.candidate:icontains(${searchStr})`).css("border-color", "red");
-			$(`.candidate:not(:icontains(${searchStr}))`).css("border-color", "");
+			$(`.candidate:icontains(${searchStr})`).css({"border-color": "#E50808", "font-weight": "bold"});
+			$(`.candidate:not(:icontains(${searchStr}))`).css({"border-color": "", "font-weight": ""});
 		}
 		else
 		{
-			$('.candidate').css("border-color", "");
+			$('.candidate').css({"border-color": "", "font-weight": ""});
 		}
 	};
 
 	function getCandidateIdFromElement(element, index)
 	{
 		return parseInt(element.attributes.getNamedItem("data-candidateId").value, 10);
+	};
+
+	function candidateElement(id, name)
+	{
+		return `<div class="candidate" data-candidateId="${id}">${name}</div>`;
+	};
+
+	function populateList(selector, candidateList)
+	{
+		$(selector).empty();
+		candidateList.forEach(
+			candidate => $(selector).append(
+				candidateElement(candidate[0], candidate[1])
+			)
+		);
+	};
+
+	function populateGroupView(groupView)
+	{
+		populateList('#available', groupView.available);
+		populateList('#committed', groupView.committed);
+		populateList('#claims', groupView.claims);
+		populateList('#holds', groupView.holds);
+		populateList('#unavailable', groupView.unavailable);
+
+		$('#ready').attr('data-ready', groupView.ready);
+		if(groupView.ready)
+		{
+			$('#ready').text('Submitted');
+		}
+
+		$('#welcome').text(`Welcome, ${groupView.name}!`);
 	};
 
 	function updateGroupState()
@@ -96,7 +144,22 @@
 			data: {"claim_list": claim_list, "hold_list": hold_list}, 
 			dataType: 'json',
 			settings: {'contentType': 'application/json'},
+			success: populateGroupView,
+		}).done(function() 
+		{
+			$('#overlay').fadeOut(300);
 		});
+	};
+
+	function refreshCandidates()
+	{
+		$.get({
+			url: '/group_refresh',
+			success: populateGroupView,
+		}).done(function() 
+		{
+			$('#overlay').fadeOut(300);
+		});	
 	};
 
 </script>

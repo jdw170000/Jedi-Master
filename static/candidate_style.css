@@ -1,23 +1,63 @@
+:root {
+	font-family: 'Source Sans Pro', sans-serif;
+	
+	--cardinal-red: #8C1515;
+	--digital-red: #B1040E;
+	--light-digital-red: #E50808;
+	--light-red: #B83A4B;
+
+	--light-olive: #A6B168;
+	--dark-olive: #7A863B;
+
+	--forest-green: #228B22;
+	--forest-green-desaturated: #456845;
+
+	--sky-dark: #016895;
+
+	--cool-grey: #53565A;
+	--black-30: #C0C0BF;
+	--black-10: #EAEAEA;
+}
+
 body {
-	background-color: #2f4353;
-	background-image: linear-gradient(#2f4353 0%, #d2ccc4 74%);
+	background-color: var(--black-10);
+}
+
+.jumbotron {
+	color: white;
+	background-color: var(--cardinal-red);
+	border-bottom: .5rem solid var(--black-10);
+
+	display: flex;
+	justify-content: space-around;
+}
+
+#search {
+	max-height: 4ex;
+
+	margin-top: 1ex;
+}
+
+.candidate-container {
+	background-color: var(--black-30);
+	border: 5px solid var(--cool-grey);
+	min-height:calc(7ex + 10px);
 }
 
 .candidate {
-	border-width:5px;
-	border-style:solid;
-	border-color:#5faee3;
+	border: 5px solid var(--cool-grey);
 	
-	background-color: #b8c6db;
-	background-image: linear-gradient(315deg, #b8c6db 0%, #f5f7fa 74%);
+	background-color: white;
 
 	padding: 1ex;
 	margin: 1ex;
 	max-width: 20ch;
+
+	font-family: 'Roboto', sans-serif;
 }
 
-.interactive {
-	min-height:calc(7ex + 10px);
+.interactive .candidate{
+	border: 5px solid var(--forest-green);
 }
 
 #available {
@@ -27,5 +67,67 @@ body {
 }
 
 h3 {
-	background-color:#a5bfd1;
+	background-color: var(--forest-green);
+	color: white;
+}
+
+.noninteractive {
+	background-color: var(--cool-grey);
+}
+
+button {
+	background-color: var(--forest-green);
+	border: none;
+	color: white;
+	padding: 1ex 2ex;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	margin: 4px 2px;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: var(--forest-green-desaturated);
+}
+
+button:active {
+	background-color: var(--forest-green-desaturated);
+  	transform: translateY(4px);
+}
+
+#ready[data-ready="1"] {
+	background-color: var(--sky-dark);
+}
+
+#overlay{	
+  position: fixed;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  height:100%;
+  display: none;
+  background: rgba(0,0,0,0.6);
+}
+.cv-spinner {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;  
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px #ddd solid;
+  border-top: 4px #2e93e6 solid;
+  border-radius: 50%;
+  animation: sp-anime 0.8s infinite linear;
+}
+@keyframes sp-anime {
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+.is-hide{
+  display:none;
 }

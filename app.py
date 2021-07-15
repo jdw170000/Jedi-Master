@@ -52,11 +52,11 @@ def register():
 	client_id = int(request.form['id'])
 	
 	# check if client is in the database
-	group_name = None
+	group = None
 	with JediDatabase() as jedi_db:
-		group_name = jedi_db.get_group_name(client_id)
+		group = jedi_db.get_group(client_id)
 	
-	if(group_name is None):
+	if(group is None):
 		abort(400)
 
 	session['id'] = client_id
@@ -72,38 +72,26 @@ def group():
 	if client_id == -1:
 		return redirect(url_for('moderator'))
 
-	#todo: get relevant data
 	with JediDatabase() as jedi_db:
-		group_name = jedi_db.get_group_name(client_id)
-		if(group_name is None):
+		group = jedi_db.get_group(client_id)
+		
+		if(group is None):
 			abort(401)
 
-		candidate_states = jedi_db.get_all_candidates()
-		
-		committed = filter(lambda candidate: candidate[3] and candidate[2] == client_id, candidate_states)
-		claims = set(jedi_db.get_group_claims(client_id))
-		holds = set(jedi_db.get_group_holds(client_id))
+		return render_template('group.html')
 
-		available = filter(lambda candidate: not candidate[3], candidate_states)
-		available = set(map(lambda candidate: (candidate[0], candidate[1]), available))
+@app.route('/group_refresh', methods=['GET'])
+def group_refresh():
+	if session['id'] == None:
+		abort(401)
 
-		unavailable = filter(lambda candidate: candidate[3] and candidate[2] != client_id, candidate_states)
-		unavailable = set(map(lambda candidate: (candidate[0], candidate[1]), unavailable))
+	client_id = int(session['id'])
 
-		# resolve conflicts in the sets
-		claims = (claims - unavailable) - holds
-		holds = holds - unavailable
-		available = (available - claims) - holds
-	
-		group_view = {
-			'name': group_name[0], 
-			'claims': claims, 
-			'holds': holds, 
-			'committed': committed,
-			'unavailable': unavailable,
-			'available': available
-		}
-		return render_template('group.html', data=group_view)
+	if client_id == -1:
+		abort(400)
+
+	with JediDatabase() as jedi_db:
+		return jedi_db.get_group_view(client_id)
 
 
 @app.route('/group', methods=['POST'])
@@ -124,10 +112,10 @@ def group_post():
 	with JediDatabase() as jedi_db:
 		jedi_db.update_group_claims(client_id, claim_list)
 		jedi_db.update_group_holds(client_id, hold_list)
+		jedi_db.clean_claims_and_holds()
+		jedi_db.ready_group(client_id)
 
-	return "test"
-
-	return redirect(url_for('group'))
+		return jedi_db.get_group_view(client_id)
 
 if __name__ == '__main__':
 	try:
