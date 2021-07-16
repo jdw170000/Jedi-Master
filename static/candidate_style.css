@@ -33,9 +33,10 @@ body {
 }
 
 #search {
-	max-height: 4ex;
+	border: 2px solid var(--sky-dark);
 
-	margin-top: 1ex;
+	margin: 1ex;
+	width: 30%;
 }
 
 .candidate-container {

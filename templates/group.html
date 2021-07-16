@@ -27,13 +27,20 @@
 </div>
 	
 <div class="jumbotron text-center">
-	<input type="text" id="search" onkeyup="searchCandidates()" placeholder="Search for names...">
-	<h1 id="welcome"></h1>
 	<button id="refresh" onclick="refreshCandidates()">Refresh</button>
+	<h1 id="welcome"></h1>
 	<button id="ready" onclick="updateGroupState()">Ready</button>
 </div>
 
 <div class="container">
+	<div class="row">
+		<div class="col-sm-12 text-center">
+			<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="var(--sky-dark)" class="bi bi-search" viewBox="0 0 16 16">
+			  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+			</svg>
+			<input type="text" id="search" onkeyup="searchCandidates()" placeholder="Search for names...">
+		</div>
+	</div>
 	<div class="row">
 		<div class="col-sm-12 text-center"> <h3>Candidates</h3> </div>
 	</div>
@@ -73,6 +80,8 @@
 	</div>
 </div>
 
+</body>
+
 <script>
 	dragula($(".interactive").toArray());
 
@@ -88,12 +97,12 @@
 		var searchStr = $("#search")[0].value;
 		if(searchStr && searchStr.length > 0)
 		{
-			$(`.candidate:icontains(${searchStr})`).css({"border-color": "#E50808", "font-weight": "bold"});
-			$(`.candidate:not(:icontains(${searchStr}))`).css({"border-color": "", "font-weight": ""});
+			$(`.candidate:icontains(${searchStr})`).css("display", "");
+			$(`.candidate:not(:icontains(${searchStr}))`).css("display", "none");
 		}
 		else
 		{
-			$('.candidate').css({"border-color": "", "font-weight": ""});
+			$('.candidate').css("display", "");
 		}
 	};
 
@@ -163,6 +172,3 @@
 	};
 
 </script>
-
-
-</body>
