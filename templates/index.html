@@ -1,9 +1,69 @@
-<p>Select your group:</p>
+<!DOCTYPE html>
+<head>
+	<title> Jedi Master </title>
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/select2/dist/css/select2.min.css')}}">
+	
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
+	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
+	
+	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/jquery/dist/jquery.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/select2/dist/js/select2.min.js')}}"></script>
+</head>
+
+<body>
+
+<div class="jumbotron text-center">
+	<h1 id="welcome">JediMaster: Group Registration</h1>
+</div>
+
+<div class="container">
+
 <form action="/register" method="post">
-	<select name="id">
-	{% for item in data %}
-		<option value="{{item[0]}}">{{item[1]}}</option>
-	{% endfor %}
-	</select>
-	<input type="submit" value="Register">
+	<div class="row justify-content-center py-3">
+		<div class="col-3">
+			<select id="group-name" class="form-control form-control-lg" name="id">
+			<option></option>
+			{% for item in data %}
+				<option value="{{item[0]}}">{{item[1]}}</option>
+			{% endfor %}
+			</select>
+		</div>
+	</div>
+	<div class="row justify-content-center">
+		<div class="col-6 text-center">
+			<input id="submit" type="submit" value="Register">
+		</div>
+	</div>
 </form>
+
+</div>
+
+</body>
+
+<script>
+	$('#group-name').select2(
+	{
+		placeholder: "Select Group",
+	});
+	
+	$('#submit').css('display', 'none');
+
+	$('#group-name').change(function()
+	{
+		if($(this).val())
+		{
+			$('#submit').css('display', '');
+		}
+		else
+		{
+			$('#submit').attr('display', 'none');
+			
+		}
+	});
+
+</script>

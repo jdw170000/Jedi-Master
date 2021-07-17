@@ -64,8 +64,8 @@ def register():
 
 @app.route('/group', methods=['GET'])
 def group():
-	if session['id'] == None:
-		abort(401)
+	if session.get('id') is None:
+		return redirect(url_for('index'))
 	
 	client_id = int(session['id'])
 
@@ -82,7 +82,7 @@ def group():
 
 @app.route('/group_refresh', methods=['GET'])
 def group_refresh():
-	if session['id'] == None:
+	if session.get('id') is None:
 		abort(401)
 
 	client_id = int(session['id'])
@@ -96,7 +96,7 @@ def group_refresh():
 
 @app.route('/group', methods=['POST'])
 def group_post():
-	if session['id'] == None:
+	if session.get('id') is None:
 		abort(401)
 
 	client_id = int(session['id'])

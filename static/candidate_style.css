@@ -76,7 +76,7 @@ h3 {
 	background-color: var(--cool-grey);
 }
 
-button {
+button, input[type="submit"] {
 	background-color: var(--forest-green);
 	border: none;
 	color: white;
@@ -88,13 +88,17 @@ button {
 	cursor: pointer;
 }
 
-button:hover {
+button:hover, input[type="submit"]:hover {
 	background-color: var(--forest-green-desaturated);
 }
 
-button:active {
+button:active, input[type="submit"]:active {
 	background-color: var(--forest-green-desaturated);
   	transform: translateY(4px);
+}
+
+input[disabled="disabled"], input[disabled="disabled"]:hover {
+	background-color: var(--cool-grey);
 }
 
 #ready[data-ready="1"] {

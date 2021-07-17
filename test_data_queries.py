@@ -1,6 +1,6 @@
-INSERT_CANDIDATE_STATE_TEST_DATA = """INSERT OR IGNORE INTO CandidateState (name) VALUES ('john hammond'), ('alfred melbrook'), ('maria de''antonio'), ('test noprefs');"""
+INSERT_CANDIDATE_STATE_TEST_DATA = """INSERT OR IGNORE INTO CandidateState (name) VALUES ('john hammond'), ('alfred melbrook'), ('maria de''antonio'), ('<b>test<b> noprefs');"""
 
-INSERT_GROUP_STATE_TEST_DATA = """INSERT OR IGNORE INTO GroupState (name) VALUES ('songbirds'), ('plus ult cappella');"""
+INSERT_GROUP_STATE_TEST_DATA = """INSERT OR IGNORE INTO GroupState (name) VALUES ('songbirds'), ('<b>plus<b> ult cappella');"""
 
 INSERT_CANDIDATE_PREFERENCES_TEST_DATA = """INSERT OR IGNORE INTO CandidatePreferences (id, group_id, priority) VALUES
 					(1, 1, 1), (1, 2, 2),
