@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <head>
-	<title> Jedi Master </title>
+	<title> jedi master </title>
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/dragula/dist/dragula.css')}}" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
 	
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
-	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" type="text/css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=roboto:wght@300&display=swap">
+	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=source+sans+pro" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
 	
 	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
@@ -30,6 +30,7 @@
 	<button id="refresh" onclick="refreshCandidates()">Refresh</button>
 	<h1 id="welcome"></h1>
 	<button id="ready" onclick="updateGroupState()">Ready</button>
+	<button id="results" onclick="getResults()" style="display: none;">Download Results</button>
 </div>
 
 <div class="container">
@@ -97,12 +98,12 @@
 		var searchStr = $("#search")[0].value;
 		if(searchStr && searchStr.length > 0)
 		{
-			$(`.candidate:icontains(${searchStr})`).css("display", "");
-			$(`.candidate:not(:icontains(${searchStr}))`).css("display", "none");
+			$(`.candidate:icontains(${searchStr})`).show();
+			$(`.candidate:not(:icontains(${searchStr}))`).hide();
 		}
 		else
 		{
-			$('.candidate').css("display", "");
+			$('.candidate').show();
 		}
 	};
 
@@ -148,13 +149,25 @@
 		populateList('#holds', groupView.holds);
 		populateList('#unavailable', groupView.unavailable);
 
+		unresolvedCount = $('#available .candidate').length + $('#claims .candidate').length + $('#holds .candidate').length;
+		if(unresolvedCount == 0)
+		{
+			$('#ready').hide();
+			$('#results').show();
+		}
+		else
+		{
+			$('#ready').show();
+			$('#results').hide();
+		}
+
 		$('#ready').attr('data-ready', groupView.ready);
 		if(groupView.ready)
 		{
 			$('#ready').text('Submitted');
 		}
 
-		$('#welcome').text(`${sanitize(groupView.name)}`);
+		$('#welcome').html(`${sanitize(groupView.name)}`);
 	};
 
 	function updateGroupState()
@@ -183,6 +196,11 @@
 		{
 			$('#overlay').fadeOut(300);
 		});	
+	};
+	
+	function getResults()
+	{
+		window.location.href = "/results"
 	};
 
 </script>

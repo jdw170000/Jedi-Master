@@ -1,4 +1,5 @@
-from flask import Flask, request, render_template, session, abort, redirect, url_for
+from flask import Flask, Response, request, render_template, session, abort, redirect, url_for
+from json import loads
 from secrets import token_hex
 
 from jedi_database import JediDatabase
@@ -6,8 +7,6 @@ from jedi_database import JediDatabase
 app = Flask(__name__)
 
 MODERATOR_KEY = None
-
-#todo: create the templates; index.html, moderator.html, and group.html
 
 @app.route('/', methods=['GET'])
 def index():
@@ -26,14 +25,28 @@ def moderator_key(key):
 		# user provided wrong key
 		abort(401)
 
-@app.route('/moderator')
+@app.route('/moderator', methods=['GET'])
 def moderator():
 	if int(session['id']) != -1:
 		abort(401)
 	
-	#todo: collect the relevant data
+	with JediDatabase() as jedi_db:
+		moderator_view = jedi_db.get_moderator_total_view()
+		return render_template('moderator.html', data=moderator_view)	
+	
+@app.route('/moderator/update/candidates', methods=['POST'])
+def moderator_update_candidates():
+	# user must be logged in as moderator
+	if int(session['id']) != -1:
+		abort(401)
+	
+	candidates_json = request.form.get("candidate_list")
 
-	return render_template('moderator.html')	
+	candidates = loads(candidates_json)
+
+	with JediDatabase() as jedi_db:
+		jedi_db.post_moderator_candidates(candidates)
+		return jedi_db.get_moderator_candidates()
 
 @app.route('/moderator/do_round', methods=['POST'])
 def do_round():
@@ -44,8 +57,25 @@ def do_round():
 	# do the round
 	with JediDatabase() as jedi_db:
 		jedi_db.do_round()
-	
-	return redirect(url_for('moderator'))
+		return jedi_db.get_moderator_view()
+
+@app.route('/moderator/refresh/candidates', methods=['GET'])
+def moderator_refresh_candidates():
+	# user must be logged in as moderator
+	if int(session['id']) != -1:
+		abort(401)
+
+	with JediDatabase() as jedi_db:
+		return jedi_db.get_moderator_candidates()
+
+@app.route('/moderator/refresh/groups', methods=['GET'])
+def moderator_refresh_groups():
+	# user must be logged in as moderator
+	if int(session['id']) != -1:
+		abort(401)
+
+	with JediDatabase() as jedi_db:
+		return jedi_db.get_moderator_groups()
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -107,8 +137,6 @@ def group_post():
 	claim_list = request.form.getlist('claim_list[]')
 	hold_list = request.form.getlist('hold_list[]')
 
-	#todo: type check and input validation
-
 	with JediDatabase() as jedi_db:
 		jedi_db.update_group_claims(client_id, claim_list)
 		jedi_db.update_group_holds(client_id, hold_list)
@@ -116,6 +144,25 @@ def group_post():
 		jedi_db.ready_group(client_id)
 
 		return jedi_db.get_group_view(client_id)
+
+@app.route('/results', methods=['GET'])
+def results():
+	if session.get('id') is None:
+		abort(401)
+	
+	client_id = int(session['id'])
+
+	with JediDatabase() as jedi_db:
+		if(client_id == -1):
+			return Response(
+				jedi_db.generate_moderator_results(), 
+				mimetype='text/csv',
+				headers={"Content-disposition": "attachment; filename=results.csv"})
+		else:
+			return Response(
+				jedi_db.generate_results(client_id), 
+				mimetype='text/csv',
+				headers={"Content-disposition": "attachment; filename=results.csv"})
 
 if __name__ == '__main__':
 	try:

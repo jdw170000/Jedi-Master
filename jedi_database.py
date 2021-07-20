@@ -2,6 +2,8 @@ import sqlite3
 import yaml
 import random
 
+from itertools import zip_longest
+
 from queries import *
 from table_creation_queries import *
 from test_data_queries import *
@@ -101,8 +103,56 @@ class JediDatabase:
 		}
 
 		return group_view
-
 	
+	def decode_group(self, resolved, group_id):
+		if resolved:
+			if group_id:
+				return group_id
+			else:
+				return -1
+		else:
+			return 0
+	def encode_group(self, encoded_id):
+		if encoded_id > 0:
+			return (1, encoded_id)
+		if encoded_id == 0:
+			return (0, None)
+		return (1, None)
+
+	def get_moderator_total_view(self):
+		candidate_states = self.get_all_candidates();
+
+		candidates = map(lambda candidate: (candidate[0], candidate[1], self.decode_group(candidate[3], candidate[2])), candidate_states)
+
+		groups = self.get_all_groups();
+		
+		moderator_view = {
+			'candidates': list(candidates),
+			'groups': list(groups)
+		}
+		
+		return moderator_view
+	
+	def get_moderator_candidates(self):
+		candidate_states = self.get_all_candidates()
+		candidates = map(lambda candidate: (candidate[0], self.decode_group(candidate[3], candidate[2])), candidate_states)
+		return { 'candidates': list(candidates) }
+	
+	def get_moderator_groups(self):
+		self.cur.execute("""SELECT id, ready FROM GroupState;""")
+		return { 'groups': self.cur.fetchall() }
+		
+	def get_moderator_view(self):
+		moderator_view = self.get_moderator_candidates()
+		moderator_view.update(self.get_moderator_groups())
+		return moderator_view;
+
+	def post_moderator_candidates(self, candidates):
+		for candidate in candidates:
+			resolved, group_id = self.encode_group(candidate[1])
+			self.cur.execute("""UPDATE CandidateState SET resolved = ?, group_id = ? WHERE id = ?;""", (resolved, group_id, candidate[0]))
+		self.connection.commit()
+
 	def clean_claims_and_holds(self):
 		self.cur.execute("""DELETE FROM GroupClaims WHERE candidate_id IN (SELECT id FROM CandidateState WHERE resolved = 1);""")
 		self.cur.execute("""DELETE FROM GroupHolds WHERE candidate_id IN (SELECT id FROM CandidateState WHERE resolved = 1);""")
@@ -137,3 +187,39 @@ class JediDatabase:
 		self.cur.execute(CLEAR_RESOLVED_HOLDS)
 		self.cur.execute(UNREADY_GROUPS)
 		self.connection.commit()
+	
+	def generate_moderator_results(self):
+		self.cur.execute("""SELECT id, name from GroupState;""")
+		groups = self.cur.fetchall()
+
+		groups.insert(0, (0 , 'Unassigned'))
+		groups.insert(0, (-1, 'No Group'))
+
+		assignments = dict()
+		for group in groups:
+			resolved, group_id = self.encode_group(group[0])
+			self.cur.execute("""SELECT name from CandidateState WHERE resolved = ? AND group_id IS ?;""", (resolved, group_id))
+			assignments[group[0]] = self.cur.fetchall()
+
+		results = ",".join([group[1].upper() for group in groups])
+		results += '\n'		
+
+		assignment_data = zip_longest(*assignments.values())
+	
+		for row in assignment_data:
+			for name in row:
+				results += ',' if name is None else f'{name[0]},'
+			results += '\n'
+
+		return results	
+
+	def generate_results(self, client_id):
+		self.cur.execute("""SELECT name from GroupState WHERE id = ?;""", (client_id, ))
+		name = self.cur.fetchone()[0].upper()
+		results = f'{name}\n'
+
+		self.cur.execute("""SELECT name FROM CandidateState WHERE resolved=1 AND group_id = ?;""", (client_id, ))
+		for candidate_name in self.cur:
+			results += f'{candidate_name[0]}\n'
+
+		return results

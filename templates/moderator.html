@@ -1,3 +1,234 @@
-<form action="/moderator/do_round" method="post">
-	<input type="submit" value="Do Round"></input>
-</form>
+<!doctype html>
+<head>
+	<title> jedi master </title>
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/select2/dist/css/select2.min.css')}}">
+	
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=roboto:wght@300&display=swap">
+	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=source+sans+pro" type="text/css">
+	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
+	
+	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/jquery/dist/jquery.min.js')}}"></script>
+	<script src="{{url_for('static', filename='node_modules/select2/dist/js/select2.min.js')}}"></script>
+	<script>
+		jQuery.expr[':'].icontains = function(a, i, m) { return jQuery(a).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0; };
+	</script>
+</head>
+
+<body>
+
+<div id="overlay">
+  <div class="cv-spinner">
+    <span class="spinner"></span>
+  </div>
+</div>
+	
+<div class="jumbotron text-center">
+	<h1 id="welcome">Moderator</h1>
+</div>
+
+
+<div class="row justify-content-center">
+	<div class="col-6 text-center">
+		<button id="do-round" onclick="doRound()">Do Round</button>
+		<button id="results" onclick="getResults()">Download Results</button>
+	</div>
+</div>
+<div class="row justify-content-center">
+	<div class="col-6 text-center">
+		<table id="groups" class=moderator-display>
+			<tr>
+				<th>Group Name</th>
+				<th>Ready</th>
+			</tr>
+			{% for group in data['groups'] %}
+				<tr data-groupId={{group[0]}}>
+					<td>{{group[1]}}</td>
+					<td>{{'Yes' if group[2] else 'No'}}</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+<hr style="margin: 2ex"/>
+
+<div class="row">
+	<div class="col-12 text-center">
+		<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="var(--sky-dark)" class="bi bi-search" viewBox="0 0 16 16">
+		  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+		</svg>
+		<input type="text" id="search" onkeyup="searchCandidates()" placeholder="Search for names...">
+	</div>
+</div>
+<div class="row">
+	<div class="col-12 text-center">
+		<button id="edit-candidates" onclick="enableEditCandidates()">Manually Assign Candidates</button>
+		<button id="commit-candidates" onclick="commitEditCandidates()" style="display: none;">Commit Changes</button>
+	</div>
+</div>
+<div class="row justify-content-center">
+	<div class="col-6 text-center">
+		<table id="candidates" class="moderator-display">
+			<tr>
+				<th>Candidate Name</th>
+				<th>Assigned Group</th>
+			</tr>
+			{% for candidate in data['candidates'] %}
+				<tr>
+					<td class="candidate-name">{{candidate[1]}}</td>
+					<td>
+						<select class="candidate-assignment" data-candidateId={{candidate[0]}}>
+							<option value=-1>No Group</option>
+							<option value=0 selected="selected">Unassigned</option>
+							{% for group in data['groups'] %}
+								<option value={{group[0]}}>{{group[1]}}</option>
+							{% endfor %}
+						</select>
+					</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+<script>
+	$('.candidate-assignment').select2(
+	{
+		width: '80%',
+	});
+
+	$('.candidate-assignment').prop('disabled', true);
+
+	refreshCandidates();
+
+	setInterval(refreshGroups, 5000);
+
+	function searchCandidates()
+	{
+		var searchStr = $("#search")[0].value;
+		if(searchStr && searchStr.length > 0)
+		{
+			$(`.candidate-name:icontains(${searchStr})`).parents('tr').show();
+			$(`.candidate-name:not(:icontains(${searchStr}))`).parents('tr').hide();
+		}
+		else
+		{
+			$('.candidate-name').parents('tr').show();
+		}
+	};
+
+	function populateCandidates(candidates)
+	{
+		candidateList = candidates.candidates;
+		candidateList.forEach((candidate) => 
+		{
+			$(`.candidate-assignment[data-candidateId=${candidate[0]}]`).val(candidate[1]).trigger('change');
+		});
+	};
+	
+	function populateGroups(groups)
+	{
+		groupList = groups.groups;
+		groupList.forEach((group) => 
+		{
+			$(`#groups tr[data-groupId=${group[0]}] td:last`).text(group[1] ? 'Yes' : 'No');
+		});
+	};
+
+	function populateModeratorView(view)
+	{
+		populateGroups(view);
+		populateCandidates(view);
+	};
+
+	function getCandidatesFromTable()
+	{
+		var candidates = new Array();
+
+		$('.candidate-assignment').each(function(index, element)
+		{
+			var id = parseInt(element.attributes.getNamedItem("data-candidateId").value, 10);
+			var group = parseInt(element.value, 10);
+			candidates.push([id, group])
+		});
+
+		return candidates;
+	};
+
+	function updateCandidates()
+	{
+		$('#overlay').fadeIn(300);
+
+		var candidates = JSON.stringify(getCandidatesFromTable());
+		
+		$.post({
+			url: '/moderator/update/candidates', 
+			data: {"candidate_list": candidates},
+			dataType: 'json',
+			settings: {'contentType': 'application/json'},
+			success: populateCandidates,
+		}).done(function() 
+		{
+			$('#overlay').fadeOut(300);
+		});
+	};
+
+	function refreshCandidates()
+	{
+		$('#overlay').fadeIn(300);
+
+		$.get({
+			url: '/moderator/refresh/candidates',
+			success: populateCandidates,
+		}).done(function() 
+		{
+			$('#overlay').fadeOut(300);
+		});	
+	};
+
+	function refreshGroups()
+	{
+		$.get({
+			url: '/moderator/refresh/groups',
+			success: populateGroups,
+		});	
+	};
+
+	function doRound()
+	{
+		$('#overlay').fadeIn(300);
+
+		$.post({
+			url: '/moderator/do_round',
+			success: populateModeratorView,
+		}).done(function()
+		{
+			$('#overlay').fadeOut(300);
+		});
+	};
+
+	function enableEditCandidates()
+	{
+		$('.candidate-assignment').prop("disabled", false);
+		$('#edit-candidates').hide();
+		$('#commit-candidates').show();
+	};
+
+	function commitEditCandidates()
+	{
+		updateCandidates();
+		$('.candidate-assignment').prop("disabled", true);
+		$('#edit-candidates').show();
+		$('#commit-candidates').hide();
+	};
+	
+	function getResults()
+	{
+		window.location.href = "/results"
+	};
+
+</script>
