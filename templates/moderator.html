@@ -34,7 +34,7 @@
 <div class="row justify-content-center">
 	<div class="col-6 text-center">
 		<button id="do-round" onclick="doRound()">Do Round</button>
-		<button id="results" onclick="getResults()">Download Results</button>
+		<button id="results" style="display: none;" onclick="getResults()">Download Results</button>
 	</div>
 </div>
 <div class="row justify-content-center">
@@ -66,7 +66,7 @@
 </div>
 <div class="row">
 	<div class="col-12 text-center">
-		<button id="edit-candidates" onclick="enableEditCandidates()">Manually Assign Candidates</button>
+		<button id="edit-candidates" style="background-color: var(--sky-dark)" onclick="enableEditCandidates()">Manually Assign Candidates</button>
 		<button id="commit-candidates" onclick="commitEditCandidates()" style="display: none;">Commit Changes</button>
 	</div>
 </div>
@@ -123,11 +123,27 @@
 
 	function populateCandidates(candidates)
 	{
+		var complete = true;
 		candidateList = candidates.candidates;
 		candidateList.forEach((candidate) => 
 		{
+			if(candidate[1] == 0)
+			{
+				complete = false;
+			}
 			$(`.candidate-assignment[data-candidateId=${candidate[0]}]`).val(candidate[1]).trigger('change');
 		});
+
+		if(complete)
+		{
+			$('#do-round').hide();
+			$('#results').show();
+		}
+		else
+		{
+			$('#do-round').show();
+			$('#results').hide();
+		}
 	};
 	
 	function populateGroups(groups)

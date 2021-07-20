@@ -192,7 +192,6 @@ class JediDatabase:
 		self.cur.execute("""SELECT id, name from GroupState;""")
 		groups = self.cur.fetchall()
 
-		groups.insert(0, (0 , 'Unassigned'))
 		groups.insert(0, (-1, 'No Group'))
 
 		assignments = dict()

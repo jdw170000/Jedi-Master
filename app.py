@@ -27,7 +27,7 @@ def moderator_key(key):
 
 @app.route('/moderator', methods=['GET'])
 def moderator():
-	if int(session['id']) != -1:
+	if session.get('id') != -1:
 		abort(401)
 	
 	with JediDatabase() as jedi_db:
@@ -37,7 +37,7 @@ def moderator():
 @app.route('/moderator/update/candidates', methods=['POST'])
 def moderator_update_candidates():
 	# user must be logged in as moderator
-	if int(session['id']) != -1:
+	if session.get('id') != -1:
 		abort(401)
 	
 	candidates_json = request.form.get("candidate_list")
@@ -51,7 +51,7 @@ def moderator_update_candidates():
 @app.route('/moderator/do_round', methods=['POST'])
 def do_round():
 	# user must be logged in as moderator
-	if int(session['id']) != -1:
+	if session.get('id') != -1:
 		abort(401)
 
 	# do the round
@@ -62,7 +62,7 @@ def do_round():
 @app.route('/moderator/refresh/candidates', methods=['GET'])
 def moderator_refresh_candidates():
 	# user must be logged in as moderator
-	if int(session['id']) != -1:
+	if session.get('id') != -1:
 		abort(401)
 
 	with JediDatabase() as jedi_db:
@@ -71,7 +71,7 @@ def moderator_refresh_candidates():
 @app.route('/moderator/refresh/groups', methods=['GET'])
 def moderator_refresh_groups():
 	# user must be logged in as moderator
-	if int(session['id']) != -1:
+	if session.get('id') != -1:
 		abort(401)
 
 	with JediDatabase() as jedi_db:
