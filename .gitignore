@@ -1,4 +1,3 @@
-*.yaml
 __pycache__/
 *.py[cod]
 my_jedi_db

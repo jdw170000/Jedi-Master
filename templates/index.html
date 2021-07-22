@@ -4,10 +4,6 @@
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/select2/dist/css/select2.min.css')}}">
 	
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap">
-	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
 	
 	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
@@ -51,17 +47,17 @@
 		placeholder: "Select Group",
 	});
 	
-	$('#submit').css('display', 'none');
+	$('#submit').hide()
 
 	$('#group-name').change(function()
 	{
 		if($(this).val())
 		{
-			$('#submit').css('display', '');
+			$('#submit').show();
 		}
 		else
 		{
-			$('#submit').attr('display', 'none');
+			$('#submit').hide();
 			
 		}
 	});

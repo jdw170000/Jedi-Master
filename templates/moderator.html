@@ -4,10 +4,6 @@
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css')}}" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='node_modules/select2/dist/css/select2.min.css')}}">
 	
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=roboto:wght@300&display=swap">
-	<link rel='stylesheet' href="https://fonts.googleapis.com/css?family=source+sans+pro" type="text/css">
 	<link rel="stylesheet" href="{{url_for('static', filename='candidate_style.css')}}" type="text/css">
 	
 	<script src="{{url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js')}}"></script>
@@ -30,6 +26,37 @@
 	<h1 id="welcome">Moderator</h1>
 </div>
 
+{% if not data['candidates'] %}
+
+<div class="row justify-content-center">
+	<div class="col-6 text-center">
+		<form id="initialize-form" action="/moderator/initialize" method="POST" enctype="multipart/form-data">
+			<label for="file-upload" class="custom-file-upload">
+				<i class="fa fa-cloud-upload"></i> Upload Response CSV File
+			</label>
+			<input id="file-upload" type="file" name="file" hidden/>
+		</form>
+	</div>
+</div>
+
+<script>
+	$('#file-upload').change(function()
+	{
+		var filename = $(this).val()
+		if(filename)
+		{
+			if(filename.endsWith('.csv'))
+			{
+				$('#initialize-form').submit()
+			} else
+			{
+				alert('File is not a .csv file!')
+			}
+		}
+	});
+</script>
+
+{% else %}
 
 <div class="row justify-content-center">
 	<div class="col-6 text-center">
@@ -241,10 +268,12 @@
 		$('#edit-candidates').show();
 		$('#commit-candidates').hide();
 	};
-	
+
 	function getResults()
 	{
 		window.location.href = "/results"
 	};
 
 </script>
+
+{% endif %}

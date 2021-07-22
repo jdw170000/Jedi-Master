@@ -1,20 +1,15 @@
 import sqlite3
-import yaml
-import random
+from csv import reader as csv_reader
 
 from itertools import zip_longest
 
 from queries import *
 from table_creation_queries import *
-from test_data_queries import *
 
 class JediDatabase:
 	def __init__(self):
-		config = None
-		with open('db_config.yaml', 'r') as config_stream:
-			config = yaml.safe_load(config_stream)
-
-		self.connection = sqlite3.connect(config['db_name'])
+		DB_NAME = 'my_jedi_db'
+		self.connection = sqlite3.connect(DB_NAME)
 		self.cur = self.connection.cursor()
 
 	def __enter__(self):
@@ -25,25 +20,31 @@ class JediDatabase:
 		self.connection.close()
 
 	def create_tables(self):
-		print('creating group state...')
 		self.cur.execute(CREATE_GROUP_STATE)
-		print('creating candidate state...')
 		self.cur.execute(CREATE_CANDIDATE_STATE)
-		print('creating candidate preferences...')
 		self.cur.execute(CREATE_CANDIDATE_PREFERENCES)
-		print('creating group claims...')
 		self.cur.execute(CREATE_GROUP_CLAIMS)
-		print('creating group holds...')
 		self.cur.execute(CREATE_GROUP_HOLDS)
 		self.connection.commit()
-		print('committed table creation.')
 
-	def insert_test_data(self):
-		self.cur.execute(INSERT_CANDIDATE_STATE_TEST_DATA)
-		self.cur.execute(INSERT_GROUP_STATE_TEST_DATA)
-		self.cur.execute(INSERT_CANDIDATE_PREFERENCES_TEST_DATA)
-		self.cur.execute(INSERT_GROUP_CLAIMS_TEST_DATA)
-		self.connection.commit()
+	def initialize_from_google_form_response_csv(self, response_file):
+		# load into a csv reader and skip header
+		reader = csv_reader([line.decode() for line in response_file.readlines()])
+		next(reader)
+		for row in reader:
+			# unpack relevant information from the row
+			_, name, _, *preferences, _ = row
+			# remove empty preferences
+			preferences = [pref for pref in preferences if pref and pref != 'No Group']
+			# create the candidate state
+			self.cur.execute("""INSERT OR IGNORE INTO CandidateState (name) VALUES (?);""", (name, ))
+			# ensure the preferred groups exist
+			self.cur.execute(f"""INSERT OR IGNORE INTO GroupState (name) VALUES {', '.join(['(?)']*len(preferences))};""", preferences)
+			# create the candidate's preferences
+			for priority, group in enumerate(preferences, 1):
+				self.cur.execute("""INSERT OR IGNORE INTO CandidatePreferences (id, group_id, priority) SELECT c.id, g.id, ? FROM CandidateState AS c INNER JOIN GroupState AS g ON c.name=? and g.name=?;""", (priority, name, group))
+		
+		self.connection.commit()		
 
 	def get_all_candidates(self):
 		self.cur.execute(SELECT_ALL_CANDIDATE_STATES)

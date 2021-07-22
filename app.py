@@ -1,5 +1,5 @@
 from flask import Flask, Response, request, render_template, session, abort, redirect, url_for
-from json import loads
+from json import loads, dumps
 from secrets import token_hex
 
 from jedi_database import JediDatabase
@@ -33,6 +33,28 @@ def moderator():
 	with JediDatabase() as jedi_db:
 		moderator_view = jedi_db.get_moderator_total_view()
 		return render_template('moderator.html', data=moderator_view)	
+
+@app.route('/moderator/initialize', methods=['POST'])
+def moderator_initialize():
+	if session.get('id') != -1:
+		abort(401)
+	if 'file' not in request.files:
+		return ('No file provided.', 400)
+	
+	response_file = request.files['file']
+	
+	if not response_file.filename:
+		return ('No file selected.', 400)
+
+	with JediDatabase() as jedi_db:
+		try:
+			jedi_db.initialize_from_google_form_response_csv(response_file)
+		except Exception as ex:
+			print(f'Error reading response file; {ex}')
+			print('Please ensure that you are uploading the .csv file exported from Google Forms.')
+		return redirect(url_for('moderator'))
+
+		
 	
 @app.route('/moderator/update/candidates', methods=['POST'])
 def moderator_update_candidates():
@@ -110,7 +132,21 @@ def group():
 
 		return render_template('group.html')
 
-@app.route('/group_refresh', methods=['GET'])
+@app.route('/group/poll', methods=['GET'])
+def group_poll():
+	if session.get('id') is None:
+		abort(401)
+
+	client_id = int(session['id'])
+
+	if client_id == -1:
+		abort(400)
+
+	with JediDatabase() as jedi_db:
+		_, ready = jedi_db.get_group(client_id)
+		return dumps(ready)
+
+@app.route('/group/refresh', methods=['GET'])
 def group_refresh():
 	if session.get('id') is None:
 		abort(401)
@@ -170,8 +206,6 @@ if __name__ == '__main__':
 		print(f'{MODERATOR_KEY=}')
 		with JediDatabase() as yoda:
 			yoda.create_tables()
-			# todo: read candidate list from configuration file
-			yoda.insert_test_data()
 		
 		app.secret_key = token_hex(32)
 

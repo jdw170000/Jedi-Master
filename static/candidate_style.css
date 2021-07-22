@@ -1,6 +1,4 @@
 :root {
-	font-family: 'Source Sans Pro', sans-serif;
-	
 	--cardinal-red: #8C1515;
 	--digital-red: #B1040E;
 	--light-digital-red: #E50808;
@@ -61,8 +59,6 @@ td, th {
 	padding: 1ex;
 	margin: 1ex;
 	max-width: 20ch;
-
-	font-family: 'Roboto', sans-serif;
 }
 
 .interactive .candidate{
@@ -90,7 +86,7 @@ h3 {
 	
 }
 
-button, input[type="submit"] {
+button, input[type="submit"], .custom-file-upload {
 	background-color: var(--forest-green);
 	border: none;
 	color: white;
@@ -102,11 +98,11 @@ button, input[type="submit"] {
 	cursor: pointer;
 }
 
-button:hover, input[type="submit"]:hover {
+button:hover, input[type="submit"]:hover, .custom-file-upload:hover {
 	background-color: var(--forest-green-desaturated);
 }
 
-button:active, input[type="submit"]:active {
+button:active, input[type="submit"]:active, .custom-file-upload:active {
 	background-color: var(--forest-green-desaturated);
   	transform: translateY(4px);
 }
@@ -117,19 +113,6 @@ input[disabled="disabled"], input[disabled="disabled"]:hover {
 
 #ready[data-ready="1"] {
 	background-color: var(--sky-dark);
-}
-
-ul#not-ready-groups {
-  	list-style: none;
-	padding: 0;
-}
-
-ul#not-ready-groups li {
-  	display: inline-block;
-}
-
-ul#not-ready-groups li:not(:last-child):after {
-  	content: ", ";
 }
 
 #overlay{	
