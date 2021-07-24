@@ -1,0 +1,21 @@
+{
+  "name": "static",
+  "version": "1.0.0",
+  "description": "required modules for Jedi Master",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jdw170000/Jedi-Master/blob/main/static/package-lock.json"
+  },
+  "author": "Josh Wiedemeier",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.0.2",
+    "dragula": "^3.7.3",
+    "jquery": "^3.6.0",
+    "select2": "^4.1.0-rc.0"
+  }
+}
