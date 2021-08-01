@@ -1,6 +1,4 @@
-SELECT_ALL_CANDIDATE_STATES = """SELECT id, name, group_id, resolved FROM CandidateState;"""
 
-SELECT_ALL_GROUP_STATES = """SELECT id, name, ready FROM GroupState;"""
 
 INSERT_OR_REPLACE_CANDIDATE_STATE_name = """INSERT OR REPLACE INTO CandidateState (name) VALUES (?);"""
 
