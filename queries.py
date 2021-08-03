@@ -6,7 +6,7 @@ RESOLVE_CANDIDATES = """UPDATE CandidateState as cs
 				ON cp.id = gc.candidate_id AND cp.group_id = gc.id
 				WHERE cp.id = cs.id 
 				ORDER BY cp.priority ASC
-				LIMIT 1), -1), 
+				LIMIT 1), -1)
 	WHERE group_id = 0 AND 
 	NOT EXISTS (SELECT 1 FROM GroupHolds as gh WHERE gh.candidate_id = cs.id LIMIT 1);"""
 

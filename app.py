@@ -3,7 +3,8 @@ import json
 import secrets
 import dataclasses
 
-from jedi_database import JediDatabase, InitializerDatabase, GroupDatabase, ModeratorDatabase, Identity, Group, Candidate, Stake, GroupView, ModeratorView, InvalidGroupException, NotModeratorException
+from jedi_database import JediDatabase, InitializerDatabase, GroupDatabase, ModeratorDatabase, InvalidGroupException, NotModeratorException
+from class_definitions import Identity, Group, Candidate, Stake, GroupView, ModeratorView
 
 app = Flask(__name__)
 
@@ -63,12 +64,14 @@ def moderator_update_candidates():
 
 	candidates_dict = json.loads(candidates_json)
 
-	candidates = [Candidate(id = c[0], name = c[1], group_id = c[2]) for c in candidates_dict]
+	candidates = [Candidate(id = candidate['id'], name=None, group_id = candidate['group_id']) for candidate in candidates_dict]
 
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
 			mod_db.post_candidates(candidates)
-			return mod_db.get_all_candidates()
+			candidates = mod_db.get_all_candidates()
+			candidates_serializable = [dataclasses.asdict(candidate) for candidate in candidates]
+			return json.dumps(candidates_serializable)
 	except NotModeratorException:
 		abort(401)
 
@@ -77,7 +80,7 @@ def do_round():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
 			mod_db.do_round()
-			return mod_db.get_view()
+			return mod_db.get_view().serialize()
 	except NotModeratorException:
 		abort(401)
 
@@ -95,8 +98,9 @@ def moderator_refresh_candidates():
 def moderator_refresh_groups():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-			print(repr(mod_db.get_all_groups()))
-			return repr(mod_db.get_all_groups())
+			groups = mod_db.get_all_groups()
+			groups_serializable = [dataclasses.asdict(group) for group in groups]
+			return json.dumps(groups_serializable)
 	except NotModeratorException:
 		abort(401)
 
@@ -155,8 +159,7 @@ def group_refresh():
 
 	try:
 		with GroupDatabase(client_id) as group_db:
-			group_view = group_db.get_view()
-			return json.dumps(group_view)
+			return group_db.get_view().serialize()
 	except InvalidGroupException:
 		abort(400)
 
@@ -181,7 +184,7 @@ def group_post():
 			#testing new robustness measures; might not need cleaning step
 			#group_db.clean_claims_and_holds() 
 			group_db.ready()
-			return group_db.get_view()
+			return group_db.get_view().serialize()
 	except InvalidGroupException:
 		abort(400)
 

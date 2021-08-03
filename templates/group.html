@@ -129,18 +129,23 @@
 		$(selector).empty();
 		candidateList.forEach(
 			candidate => $(selector).append(
-				candidateElement(candidate[0], candidate[1])
+				candidateElement(candidate.id, candidate.name)
 			)
 		);
 	};
 
 	function populateGroupView(groupView)
 	{
-		populateList('#available', groupView.available);
-		populateList('#committed', groupView.committed);
+		if(typeof(groupView) === 'string')
+		{
+			groupView = JSON.parse(groupView);
+		}
+
+		populateList('#available', groupView.available_candidates);
+		populateList('#committed', groupView.committed_candidates);
 		populateList('#claims', groupView.claims);
 		populateList('#holds', groupView.holds);
-		populateList('#unavailable', groupView.unavailable);
+		populateList('#unavailable', groupView.unavailable_candidates);
 
 		unresolvedCount = $('#available .candidate').length + $('#claims .candidate').length + $('#holds .candidate').length;
 		if(unresolvedCount == 0)
@@ -158,6 +163,10 @@
 		if(groupView.ready)
 		{
 			$('#ready').text('Submitted');
+		}
+		else
+		{
+			$('#ready').text('Ready');
 		}
 
 		$('#welcome').html(`${sanitize(groupView.name)}`);

@@ -72,9 +72,9 @@
 				<th>Ready</th>
 			</tr>
 			{% for group in data['groups'] %}
-				<tr data-groupId={{group[0]}}>
-					<td>{{group[1]}}</td>
-					<td>{{'Yes' if group[2] else 'No'}}</td>
+				<tr data-groupId={{group.id}}>
+					<td>{{group.name}}</td>
+					<td>{{'Yes' if group.ready else 'No'}}</td>
 				</tr>
 			{% endfor %}
 		</table>
@@ -106,13 +106,13 @@
 			</tr>
 			{% for candidate in data['candidates'] %}
 				<tr>
-					<td class="candidate-name">{{candidate[1]}}</td>
+					<td class="candidate-name">{{candidate.name}}</td>
 					<td>
-						<select class="candidate-assignment" data-candidateId={{candidate[0]}}>
+						<select class="candidate-assignment" data-candidateId={{candidate.id}}>
 							<option value=-1>No Group</option>
 							<option value=0 selected="selected">Unassigned</option>
 							{% for group in data['groups'] %}
-								<option value={{group[0]}}>{{group[1]}}</option>
+								<option value={{group.id}}>{{group.name}}</option>
 							{% endfor %}
 						</select>
 					</td>
@@ -150,15 +150,18 @@
 
 	function populateCandidates(candidates)
 	{
-		var complete = true;
-		candidateList = candidates.candidates;
-		candidateList.forEach((candidate) => 
+		if(typeof(candidates) === 'string')
 		{
-			if(candidate[1] == 0)
+			candidates = JSON.parse(candidates);
+		}
+		var complete = true;
+		candidates.forEach((candidate) => 
+		{
+			if(candidate.group_id == 0)
 			{
 				complete = false;
 			}
-			$(`.candidate-assignment[data-candidateId=${candidate[0]}]`).val(candidate[1]).trigger('change');
+			$(`.candidate-assignment[data-candidateId=${candidate.id}]`).val(candidate.group_id).trigger('change');
 		});
 
 		if(complete)
@@ -175,17 +178,26 @@
 	
 	function populateGroups(groups)
 	{
-		groupList = groups.groups;
-		groupList.forEach((group) => 
+		if(typeof(groups) === 'string')
 		{
-			$(`#groups tr[data-groupId=${group[0]}] td:last`).text(group[1] ? 'Yes' : 'No');
+			groups = JSON.parse(groups);
+		}
+
+		groups.forEach((group) => 
+		{
+			$(`#groups tr[data-groupId=${group.id}] td:last`).text(group.ready ? 'Yes' : 'No');
 		});
 	};
 
 	function populateModeratorView(view)
 	{
-		populateGroups(view);
-		populateCandidates(view);
+		if(typeof(view) === 'string')
+		{
+			view = JSON.parse(view);
+		}
+
+		populateGroups(view.groups);
+		populateCandidates(view.candidates);
 	};
 
 	function getCandidatesFromTable()
@@ -196,7 +208,7 @@
 		{
 			var id = parseInt(element.attributes.getNamedItem("data-candidateId").value, 10);
 			var group = parseInt(element.value, 10);
-			candidates.push([id, group])
+			candidates.push({id: id, group_id: group})
 		});
 
 		return candidates;

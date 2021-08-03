@@ -8,40 +8,7 @@ from typing import List
 
 from queries import RESOLVE_CANDIDATES
 from table_creation_queries import *
-
-@dataclass(frozen = True)
-class Identity:
-	id: int
-	name: str
-
-@dataclass(frozen = True)
-class Group(Identity):
-	ready: bool = False
-
-@dataclass(frozen = True)
-class Candidate(Identity):
-	group_id: int
-
-# a Stake is a claim or a hold
-@dataclass(frozen = True)
-class Stake:
-	group_id: int
-	candidate_id: int
-
-@dataclass(frozen = True)
-class ModeratorView:
-	candidates: List[Candidate] = None
-	groups: List[Group] = None
-
-@dataclass(frozen = True)
-class GroupView:
-	name: str
-	ready: bool
-	available_candidates: List[Identity]
-	unavailable_candidates: List[Identity]
-	committed_candidates: List[Identity]
-	claims: List[Stake]
-	holds: List[Stake]	
+from class_definitions import Identity, Group, Candidate, Stake, ModeratorView, GroupView
 
 class InvalidGroupException(Exception):
 	pass
@@ -194,21 +161,21 @@ class GroupDatabase(JediDatabase):
 	       
 		# a candidate is committed to my group if they have my group id
 		is_committed = lambda candidate: candidate.group_id == self.group_id
-		committed, remaining_candidates = more_itertools.partition(lambda candidate: candidate.group_id == self.group_id, remaining_candidates)
+		remaining_candidates, committed = more_itertools.partition(is_committed, remaining_candidates)
 
 		# a candidate is unavailable if they are not committed to me and they are assigned (group id != 0)
 		is_unavailable = lambda candidate: candidate.group_id != 0
-		unavailable, remaining_candidates = more_itertools.partition(is_unavilable, remaining_candidates)
+		remaining_candidates, unavailable = more_itertools.partition(is_unavailable, remaining_candidates)
 
 		# a candidate is claimed by me if they are available and I am claiming them
 		my_claims = self.get_claims()
-		is_claimed = lambda candidate: Identity(group_id = self.group_id, candidate_id = candidate.id) in my_claims
-		claims, remaining_candidates = more_itertools.partition(is_claimed, remaining_candidate)
+		is_claimed = lambda candidate: Stake(group_id = self.group_id, candidate_id = candidate.id) in my_claims
+		remaining_candidates, claims = more_itertools.partition(is_claimed, remaining_candidates)
 
 		# a candidate is held by me if they are available, I am not claiming them, and I am holding them
 		my_holds = self.get_holds()
-		is_held = lambda candidate: Identity(group_id = self.group_id, candidate_id = candidate.id) in my_holds
-		holds, remaining_candidates = more_itertools.partition(is_held, remaining_candidate)
+		is_held = lambda candidate: Stake(group_id = self.group_id, candidate_id = candidate.id) in my_holds
+		remaining_candidates, holds = more_itertools.partition(is_held, remaining_candidates)
 		
 		# a candidate is available if they are not assigned, claimed, or held
 		available = remaining_candidates
@@ -218,9 +185,9 @@ class GroupDatabase(JediDatabase):
 			ready = group.ready,
 			claims = list(claims), 
 			holds = list(holds), 
-			committed = list(committed),
-			unavailable = list(unavailable),
-			available = list(available)
+			committed_candidates = list(committed),
+			unavailable_candidates = list(unavailable),
+			available_candidates = list(available)
 		)
 
 	def generate_results(self):
