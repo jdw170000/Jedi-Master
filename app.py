@@ -1,8 +1,9 @@
 from flask import Flask, Response, request, render_template, session, abort, redirect, url_for
 import json
 import secrets
+import dataclasses
 
-from jedi_database import InitializerDatabase, GroupDatabase, ModeratorDatabase, Identity, Group, Candidate, Stake, GroupView, ModeratorView, InvalidGroupException, NotModeratorException
+from jedi_database import JediDatabase, InitializerDatabase, GroupDatabase, ModeratorDatabase, Identity, Group, Candidate, Stake, GroupView, ModeratorView, InvalidGroupException, NotModeratorException
 
 app = Flask(__name__)
 
@@ -27,7 +28,7 @@ def moderator_key(key: str):
 @app.route('/moderator', methods=['GET'])
 def moderator():
 	try:	
-		with ModeratorDatabase() as mod_db:
+		with ModeratorDatabase(session.get('id')) as mod_db:
 			moderator_view = mod_db.get_view()
 			return render_template('moderator.html', data=moderator_view)	
 	except NotModeratorException:
@@ -47,7 +48,7 @@ def moderator_initialize():
 
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-				jedi_db.initialize_from_google_form_response_csv(response_file)
+				mod_db.populate_from_google_form_response_csv(response_file)
 	except NotModeratorException:
 		abort(401) 
 	except Exception as ex:
@@ -84,7 +85,9 @@ def do_round():
 def moderator_refresh_candidates():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-			return mod_db.get_all_candidates()
+			candidates = mod_db.get_all_candidates()
+			candidates_serializable = [dataclasses.asdict(candidate) for candidate in candidates]
+			return json.dumps(candidates_serializable)
 	except NotModeratorException:
 		abort(401)
 
@@ -92,7 +95,8 @@ def moderator_refresh_candidates():
 def moderator_refresh_groups():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-			return mod_db.get_moderator_groups()
+			print(repr(mod_db.get_all_groups()))
+			return repr(mod_db.get_all_groups())
 	except NotModeratorException:
 		abort(401)
 
