@@ -4,7 +4,7 @@ import secrets
 import dataclasses
 
 from jedi_database import JediDatabase, InitializerDatabase, GroupDatabase, ModeratorDatabase, InvalidGroupException, NotModeratorException
-from class_definitions import Identity, Group, Candidate, Stake, GroupView, ModeratorView
+from class_definitions import Group, Candidate, Stake, GroupView, ModeratorView
 
 app = Flask(__name__)
 
@@ -69,9 +69,7 @@ def moderator_update_candidates():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
 			mod_db.post_candidates(candidates)
-			candidates = mod_db.get_all_candidates()
-			candidates_serializable = [dataclasses.asdict(candidate) for candidate in candidates]
-			return json.dumps(candidates_serializable)
+			return json.dumps(mod_db.get_all_candidates())
 	except NotModeratorException:
 		abort(401)
 
@@ -80,7 +78,7 @@ def do_round():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
 			mod_db.do_round()
-			return mod_db.get_view().serialize()
+			return mod_db.get_view()
 	except NotModeratorException:
 		abort(401)
 
@@ -88,9 +86,7 @@ def do_round():
 def moderator_refresh_candidates():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-			candidates = mod_db.get_all_candidates()
-			candidates_serializable = [dataclasses.asdict(candidate) for candidate in candidates]
-			return json.dumps(candidates_serializable)
+			return json.dumps(mod_db.get_all_candidates())
 	except NotModeratorException:
 		abort(401)
 
@@ -98,9 +94,7 @@ def moderator_refresh_candidates():
 def moderator_refresh_groups():
 	try:
 		with ModeratorDatabase(session.get('id')) as mod_db:
-			groups = mod_db.get_all_groups()
-			groups_serializable = [dataclasses.asdict(group) for group in groups]
-			return json.dumps(groups_serializable)
+			return json.dumps(mod_db.get_all_groups())
 	except NotModeratorException:
 		abort(401)
 
@@ -146,7 +140,7 @@ def group_poll():
 	try:
 		with GroupDatabase(client_id) as group_db:
 			group = group_db.get_group()
-			return json.dumps(group.ready)
+			return json.dumps(group['ready'])
 	except InvalidGroupException:
 		abort(400)
 
@@ -159,7 +153,7 @@ def group_refresh():
 
 	try:
 		with GroupDatabase(client_id) as group_db:
-			return group_db.get_view().serialize()
+			return group_db.get_view()
 	except InvalidGroupException:
 		abort(400)
 
@@ -172,19 +166,23 @@ def group_post():
 	client_id = int(session['id'])
 
 	claim_list = request.form.getlist('claim_list[]')
-	claims = [Stake(group_id = client_id, candidate_id = int(claim)) for claim in claim_list]
+	claims = [{
+			'group_id': client_id, 
+			'candidate_id': int(claim)
+		} for claim in claim_list]
 
 	hold_list = request.form.getlist('hold_list[]')
-	holds = [Stake(group_id = client_id, candidate_id = int(hold)) for hold in hold_list]
+	holds = [{
+			'group_id': client_id, 
+			'candidate_id': int(hold)
+		} for hold in hold_list]
 	
 	try:
 		with GroupDatabase(client_id) as group_db:
 			group_db.update_claims(claims)
 			group_db.update_holds(holds)
-			#testing new robustness measures; might not need cleaning step
-			#group_db.clean_claims_and_holds() 
 			group_db.ready()
-			return group_db.get_view().serialize()
+			return group_db.get_view()
 	except InvalidGroupException:
 		abort(400)
 

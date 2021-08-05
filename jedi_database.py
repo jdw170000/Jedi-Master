@@ -1,14 +1,12 @@
 import sqlite3
 import csv
 import itertools
-import more_itertools
 
-from dataclasses import dataclass
 from typing import List
+from class_definitions import Candidate, Group, Stake, ModeratorView, GroupView
 
 from queries import RESOLVE_CANDIDATES
 from table_creation_queries import *
-from class_definitions import Identity, Group, Candidate, Stake, ModeratorView, GroupView
 
 class InvalidGroupException(Exception):
 	pass
@@ -31,14 +29,22 @@ class JediDatabase:
 
 	def get_all_candidates(self) -> List[Candidate]:
 		self.cur.execute("""SELECT id, name, group_id FROM CandidateState;""")
-		return [Candidate(id = result[0], name = result[1], group_id = result[2]) for result in self.cur.fetchall()]
+		return [{
+				'id': result[0], 
+				'name': result[1], 
+				'group_id': result[2]
+			} for result in self.cur.fetchall()]
 	
 	def get_all_groups(self) -> List[Group]:
 		self.cur.execute("""SELECT id, name, ready FROM GroupState;""")
-		return [Group(id = result[0], name = result[1], ready = result[2]) for result in self.cur.fetchall()]
+		return [{
+				'id': result[0], 
+				'name': result[1], 
+				'ready': result[2]
+			} for result in self.cur.fetchall()]
 		
 class InitializerDatabase(JediDatabase):
-	def create_tables(self) -> None:
+	def create_tables(self):
 		self.cur.execute(CREATE_GROUP_STATE)
 		self.cur.execute(CREATE_CANDIDATE_STATE)
 		self.cur.execute(CREATE_CANDIDATE_PREFERENCES)
@@ -55,14 +61,17 @@ class ModeratorDatabase(JediDatabase):
 	def get_view(self) -> ModeratorView:
 		candidates = self.get_all_candidates();
 		groups = self.get_all_groups();
-		return ModeratorView(candidates = candidates, groups = groups)
+		return {
+			'candidates': candidates, 
+			'groups': groups
+		}
 	
-	def post_candidates(self, candidates: List[Candidate]) -> None:
+	def post_candidates(self, candidates: List[Candidate]):
 		for candidate in candidates:
-			self.cur.execute("""UPDATE CandidateState SET group_id = ? WHERE id = ?;""", (candidate.group_id, candidate.id))
+			self.cur.execute("""UPDATE CandidateState SET group_id = ? WHERE id = ?;""", (candidate['group_id'], candidate['id']))
 		self.connection.commit()
 
-	def populate_from_google_form_response_csv(self, response_file) -> None:
+	def populate_from_google_form_response_csv(self, response_file):
 		# load into a csv reader and skip header
 		reader = csv.reader([line.decode() for line in response_file.readlines()])
 		next(reader)
@@ -87,18 +96,18 @@ class ModeratorDatabase(JediDatabase):
 		self.cur.execute("""UPDATE GroupState SET Ready = 0;""")
 		self.connection.commit()
 
-	def generate_moderator_results(self) -> str:
+	def generate_results(self) -> str:
 		groups = self.get_all_groups()
 
-		no_group = Group(id = -1, name = 'No Group')
+		no_group = {'id': -1, 'name': 'No Group'}
 		groups.insert(0, no_group)
 
 		assignments = dict()
 		for group in groups:
-			self.cur.execute("""SELECT name from CandidateState WHERE group_id = ?;""", (group.id))
-			assignments[group.id] = [result[0] for result in self.cur.fetchall()]
+			self.cur.execute("""SELECT name from CandidateState WHERE group_id = ?;""", (group['id'],))
+			assignments[group['id']] = [result[0] for result in self.cur.fetchall()]
 
-		results = ",".join([group.name.upper() for group in groups])
+		results = ",".join([group['name'].upper() for group in groups])
 		results += '\n'		
 
 		assignment_data = itertools.zip_longest(*assignments.values())
@@ -122,77 +131,86 @@ class GroupDatabase(JediDatabase):
 		if(result is None):
 			raise InvalidGroupException(f'Selected group ({self.group_id}) does not exist') 
 
-		return Group(id = self.group_id, name = result[0], ready = result[1])
+		return {
+			'id': self.group_id, 
+			'name': result[0], 
+			'ready': result[1]
+		}
 	
 	def get_claims(self) -> List[Stake]:
 		self.cur.execute("""SELECT candidate_id FROM GroupClaims WHERE id = ?;""", (self.group_id,))
-		return [Stake(group_id = self.group_id, candidate_id = result[0]) for result in self.cur.fetchall()]
+		return [{
+				'group_id': self.group_id, 
+				'candidate_id': result[0]
+			} for result in self.cur.fetchall()]
 
 	def get_holds(self) -> List[Stake]:
 		self.cur.execute("""SELECT candidate_id FROM GroupHolds WHERE id = ?;""", (self.group_id,))
-		return [Stake(group_id = self.group_id, candidate_id = result[0]) for result in self.cur.fetchall()]
-	
-	def clean_claims_and_holds(self) -> None:
-		self.cur.execute("""DELETE FROM GroupClaims WHERE candidate_id IN (SELECT id FROM CandidateState AS cs WHERE cs.group_id <> 0);""")
-		self.cur.execute("""DELETE FROM GroupHolds WHERE candidate_id IN (SELECT id FROM CandidateState AS cs WHERE cs.group_id <> 0);""")
-		self.cur.execute("""DELETE FROM GroupHolds AS gh WHERE EXISTS(SELECT 1 FROM GroupClaims AS gc WHERE gc.id = gh.id AND gc.candidate_id = gh.candidate_id);""")
-		self.connection.commit()
+		return [{
+			'group_id': self.group_id, 
+			'candidate_id': result[0]
+			} for result in self.cur.fetchall()]
 
-	def update_claims(self, claim_list: List[Stake]) -> None:
+	def update_claims(self, claim_list: List[Stake]):
 		self.cur.execute("""DELETE FROM GroupClaims WHERE id = ?;""", (self.group_id,))
 		for claim in claim_list:
-			self.cur.execute("""INSERT OR IGNORE INTO GroupClaims (id, candidate_id) VALUES (?, ?);""", (self.group_id, claim.candidate_id))
+			self.cur.execute("""INSERT OR IGNORE INTO GroupClaims (id, candidate_id) VALUES (?, ?);""", (self.group_id, claim['candidate_id']))
 		self.connection.commit()
 	
-	def update_holds(self, hold_list: List[Stake]) -> None:
+	def update_holds(self, hold_list: List[Stake]):
 		self.cur.execute("""DELETE FROM GroupHolds WHERE id = ?;""", (self.group_id,))
 		for hold in hold_list:
-			self.cur.execute("""INSERT OR IGNORE INTO GroupHolds (id, candidate_id) VALUES (?, ?);""", (self.group_id, hold.candidate_id))
+			self.cur.execute("""INSERT OR IGNORE INTO GroupHolds (id, candidate_id) VALUES (?, ?);""", (self.group_id, hold['candidate_id']))
 		self.connection.commit()
 
-	def ready(self) -> None:
+	def ready(self):
 		self.cur.execute("""UPDATE GroupState SET ready = 1 WHERE id = ?;""", (self.group_id,))
 		self.connection.commit()
 
 	def get_view(self) -> GroupView:
 		group = self.get_group()
-
-		remaining_candidates = self.get_all_candidates()
-	       
-		# a candidate is committed to my group if they have my group id
-		is_committed = lambda candidate: candidate.group_id == self.group_id
-		remaining_candidates, committed = more_itertools.partition(is_committed, remaining_candidates)
-
-		# a candidate is unavailable if they are not committed to me and they are assigned (group id != 0)
-		is_unavailable = lambda candidate: candidate.group_id != 0
-		remaining_candidates, unavailable = more_itertools.partition(is_unavailable, remaining_candidates)
-
-		# a candidate is claimed by me if they are available and I am claiming them
 		my_claims = self.get_claims()
-		is_claimed = lambda candidate: Stake(group_id = self.group_id, candidate_id = candidate.id) in my_claims
-		remaining_candidates, claims = more_itertools.partition(is_claimed, remaining_candidates)
-
-		# a candidate is held by me if they are available, I am not claiming them, and I am holding them
 		my_holds = self.get_holds()
-		is_held = lambda candidate: Stake(group_id = self.group_id, candidate_id = candidate.id) in my_holds
-		remaining_candidates, holds = more_itertools.partition(is_held, remaining_candidates)
 		
-		# a candidate is available if they are not assigned, claimed, or held
-		available = remaining_candidates
+		def candidate_classifier(candidate: Candidate) -> str:
+			# a candidate is committed to my group if they have my group id
+			if candidate['group_id'] == self.group_id:
+				return 'committed_candidates'
+			# a candidate is unavailable if they are not committed to me and they are assigned (group id != 0)
+			if candidate['group_id'] != 0:
+				return 'unavailable_candidates'
+			# a candidate is claimed by me if they are available and I am claiming them
+			if any([candidate['id'] == claim['candidate_id'] for claim in my_claims]):
+				return 'claims'
+			# a candidate is held by me if they are available, I am not claiming them, and I am holding them
+			if any([candidate['id'] == hold['candidate_id'] for hold in my_holds]):
+				return 'holds'
+			# a candidate is available if they are not assigned, claimed, or held
+			return 'available_candidates'
 		
-		return GroupView(
-			name = group.name, 
-			ready = group.ready,
-			claims = list(claims), 
-			holds = list(holds), 
-			committed_candidates = list(committed),
-			unavailable_candidates = list(unavailable),
-			available_candidates = list(available)
-		)
+		all_candidates = self.get_all_candidates()
+
+		categorized_candidates = itertools.groupby(all_candidates, candidate_classifier)
+		group_view = {
+			'name': group['name'], 
+			'ready': group['ready'],
+			'committed_candidates': [],
+			'unavailable_candidates': [],
+			'available_candidates': [],
+			'claims': [],
+			'holds': []
+		}
+		for category, candidates in categorized_candidates:
+			candidates_list = list(candidates)
+			for candidate in candidates_list:
+				candidate.pop('group_id')
+			group_view[category] = list(candidates_list)
+
+		return group_view
 
 	def generate_results(self):
 		group = self.get_group()
-		results = f'{group.name.upper()}\n'
+		results = f"{group['name'].upper()}\n"
 
 		self.cur.execute("""SELECT name FROM CandidateState WHERE group_id = ?;""", (self.group_id, ))
 		for candidate_name in self.cur:

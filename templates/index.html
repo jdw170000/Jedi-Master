@@ -25,7 +25,7 @@
 			<select id="group-name" class="form-control form-control-lg" name="id">
 			<option></option>
 			{% for group in data %}
-				<option value="{{group.id}}">{{group.name}}</option>
+				<option value="{{group['id']}}">{{group['name']}}</option>
 			{% endfor %}
 			</select>
 		</div>

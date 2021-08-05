@@ -72,9 +72,9 @@
 				<th>Ready</th>
 			</tr>
 			{% for group in data['groups'] %}
-				<tr data-groupId={{group.id}}>
-					<td>{{group.name}}</td>
-					<td>{{'Yes' if group.ready else 'No'}}</td>
+				<tr data-groupId={{group['id']}}>
+					<td>{{group['name']}}</td>
+					<td>{{'Yes' if group['ready'] else 'No'}}</td>
 				</tr>
 			{% endfor %}
 		</table>
